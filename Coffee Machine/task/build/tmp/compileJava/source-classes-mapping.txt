@@ -1,4 +1,7 @@
 machine/CoffeeMachine.java
  machine.CoffeeMachine
  machine.CoffeeMaker
+ machine.CoffeeMaker$1
  machine.CoffeeMaker$Drink
+ machine.CoffeeMaker$State
+ machine.IncorrectQuantityException

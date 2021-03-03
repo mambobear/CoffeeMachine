@@ -1,24 +1,13 @@
 package machine;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 
-import java.util.Scanner;
 public class CoffeeMachine {
     public static void main(String[] args) {
 
-        // stage1();
-
-        // stage2();
-
-        stage3();
-    }
-
-    private static void stage3() {
         Scanner scanner = new Scanner(System.in);
 
-        CoffeeMaker machine = new CoffeeMaker();
+        CoffeeMaker machine = new CoffeeMaker(550, 400, 540, 120, 9);
         machine.start();
 
         while (true) {
@@ -29,109 +18,51 @@ public class CoffeeMachine {
             machine.performAction(action);
         }
     }
-
-    private static void stage2() {
-        Scanner scanner = new Scanner(System.in);
-
-        System.out.println("Write how many ml of water the coffee machine has:");
-        int water = scanner.nextInt();
-
-        System.out.println("Write how many ml of milk the coffee machine has:");
-        int milk = scanner.nextInt();
-
-        System.out.println("Write how many grams of coffee beans the coffee machine has:");
-        int beans = scanner.nextInt();
-
-        System.out.println("Write how many cups of coffee you will need:");
-        int cupsOfCoffee = scanner.nextInt();
-
-        int nMaxNumberOfCups =  Collections.min(Arrays.asList(water / 200, milk / 50, beans / 15));
-        if(nMaxNumberOfCups < cupsOfCoffee) {
-            System.out.printf("No, I can make only %d cup(s) of coffee\n", nMaxNumberOfCups);
-        } else {
-            String str = "Yes, I can make that amount of coffee";
-            if (nMaxNumberOfCups > cupsOfCoffee) {
-                str = str + " (and even "+ (nMaxNumberOfCups - cupsOfCoffee) + " more than that)";
-            }
-            System.out.println(str);
-        }
-    }
-
-    private static void stage1() {
-        Scanner scanner = new Scanner(System.in);
-
-        System.out.println("Write how many cups of coffee you will need:");
-        int nCups = scanner.nextInt();
-
-        int milk = nCups * 50;
-        int beans = nCups * 15;
-        int water = nCups * 200;
-        System.out.printf("For %d cups of coffee you will need:\n" +
-                "%d ml of water\n" +
-                "%d ml of milk\n" +
-                "%d g of coffee beans", nCups, water, milk, beans);
-    }
 }
 
 class CoffeeMaker {
 
-    private final ArrayList<String> actionMenu = new ArrayList<>(Arrays.asList("buy", "fill", "take", "remaining", "exit"));
-    private final ArrayList<String> coffeeMenu = new ArrayList<>(Arrays.asList("1", "2", "3", "back"));
+    private final HashMap<String, State> actionMenu;
+    private final HashMap<String, Drink> coffeeMenu;
+    private final HashMap<State, String> statePrompts;
 
-    private int amount = 550;
-    private int water = 400;
-    private int milk = 540;
-    private int beans = 120;
-    private int cups = 9;
+    private int amount;
+    private int water;
+    private int milk;
+    private int beans;
+    private int cups;
 
-    private State state = State.CHOOSING_ACTION;
-    private String prompt = "\nWrite action (buy, fill, take, remaining, exit):";
+    private State state;
+    private String prompt;
+
+    public CoffeeMaker(int amount, int water, int milk, int beans, int cups) {
+        this.amount = amount;
+        this.water = water;
+        this.milk = milk;
+        this.beans = beans;
+        this.cups = cups;
+
+        state = State.CHOOSING_ACTION;
+        prompt = "\nWrite action (buy, fill, take, remaining, exit):";
+
+        actionMenu = initActionMenu();
+        coffeeMenu = initCoffeeMenu();
+        statePrompts = initStatePrompts();
+    }
+
+    private HashMap<State, String> initStatePrompts() {
+        HashMap<State, String> prompts = new HashMap<>();
+        prompts.put(State.CHOOSING_ACTION, "\nWrite action (buy, fill, take, remaining, exit):");
+        prompts.put(State.BUYING_COFFEE, "\nWhat do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu:");
+        prompts.put(State.FILLING_WATER, "Write how many ml of water do you want to add:");
+        prompts.put(State.FILLING_MILK, "Write how many ml of milk do you want to add:");
+        prompts.put(State.FILLING_BEANS, "Write how many grams of coffee beans do you want to add:");
+        prompts.put(State.FILLING_CUPS, "Write how many disposable cups of coffee do you want to add:");
+        return  prompts;
+    }
 
     public void start() {
         System.out.println(prompt);
-    }
-
-    private enum State {
-        CHOOSING_ACTION, BUYING_COFFEE,
-        FILLING_WATER,  FILLING_MILK, FILLING_BEANS, FILLING_CUPS,
-    }
-
-    final Drink[] drinks = new Drink[] {
-            new Drink(250, 0, 16, 4),   // espresso
-            new Drink(350, 75, 20, 7),  // latte
-            new Drink(200, 100, 12, 6)  // cappuccino
-    };
-
-    public String toString() {
-        return "The coffee machine has:\n" + String.format("%d of water\n", water) +
-                String.format("%d of milk\n", milk) +
-                String.format("%d of coffee beans\n", beans) +
-                String.format("%d of disposable cups\n", cups) +
-                String.format("$%d of money", amount);
-    }
-
-    private void setState(State state) {
-        switch (state) {
-            case CHOOSING_ACTION:
-                prompt = "\nWrite action (buy, fill, take, remaining, exit):";
-                break;
-            case BUYING_COFFEE:
-                prompt = "\nWhat do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu:";
-                break;
-            case FILLING_WATER:
-                prompt = "Write how many ml of water do you want to add:";
-                break;
-            case FILLING_MILK:
-                prompt = "Write how many ml of milk do you want to add:";
-                break;
-            case FILLING_BEANS:
-                prompt = "Write how many grams of coffee beans do you want to add:";
-                break;
-            case FILLING_CUPS:
-                prompt = "Write how many disposable cups of coffee do you want to add:";
-                break;
-        }
-        this.state = state;
     }
 
     public void performAction(String input) {
@@ -157,6 +88,79 @@ class CoffeeMaker {
                 break;
         }
         System.out.println(prompt);
+    }
+
+    private void choose_action(String action) {
+        if (!actionMenu.containsKey(action)) {
+            System.out.println("Invalid action");
+        }
+        switch(actionMenu.get(action)) {
+            case BUYING_COFFEE:
+                setState(State.BUYING_COFFEE);
+                break;
+            case FILLING_WATER:
+                setState(State.FILLING_WATER);
+                break;
+            case DISBURSING:
+                take();
+                break;
+            case LOGGING:
+                remaining();
+                break;
+            default:
+        }
+    }
+
+    private void setState(State state) {
+        prompt = statePrompts.get(state);
+        this.state = state;
+    }
+
+    private void buy_coffee(String input) {
+        if ("back".equals(input)) {
+            setState(State.CHOOSING_ACTION);
+            return;
+        }
+
+        if (!coffeeMenu.containsKey(input)) {
+            System.out.println("Invalid input");
+            return;
+        }
+
+        setState(State.CHOOSING_ACTION);
+        Drink drink = coffeeMenu.get(input);
+        if (canBuy(drink)) {
+            System.out.println("I have enough resources, making you a coffee!");
+            water -= drink.water;
+            milk -= drink.milk;
+            beans -= drink.beans;
+            cups -= 1;
+            amount += drink.price;
+        }
+    }
+
+    private boolean canBuy(Drink drink) {
+        if (drink.water > water) {
+            System.out.println("Sorry, not enough water!");
+            return false;
+        }
+
+        if (drink.milk > milk) {
+            System.out.println("Sorry, not enough milk!");
+            return false;
+        }
+
+        if (drink.beans > beans) {
+            System.out.println("Sorry, not enough beans!");
+            return false;
+        }
+
+        if (cups == 0) {
+            System.out.println("Sorry, not enough cup!");
+            return false;
+        }
+
+        return true;
     }
 
     private void fillCups(String input) {
@@ -224,74 +228,6 @@ class CoffeeMaker {
         return quantity;
     }
 
-    private void buy_coffee(String input) {
-        int choice = coffeeMenu.indexOf(input);
-
-        if (choice < 0 || choice > 3) {
-            System.out.println("Invalid input");
-            return;
-        }
-
-        setState(State.CHOOSING_ACTION);
-
-        if (choice == 3) {
-            return;
-        }
-
-        Drink drink = drinks[choice];
-        if (canBuy(drink)) {
-            System.out.println("I have enough resources, making you a coffee!");
-            water -= drink.water;
-            milk -= drink.milk;
-            beans -= drink.beans;
-            cups -= 1;
-            amount += drink.price;
-        }
-    }
-
-    private void choose_action(String action) {
-        switch(actionMenu.indexOf(action)) {
-            case 0:
-                setState(State.BUYING_COFFEE);
-                break;
-            case 1:
-                setState(State.FILLING_WATER);
-                break;
-            case 2:
-                take();
-                break;
-            case 3:
-                remaining();
-                break;
-            default:
-                System.out.println("Invalid action");
-        }
-    }
-
-    private boolean canBuy(Drink drink) {
-        if (drink.water > water) {
-            System.out.println("Sorry, not enough water!");
-            return false;
-        }
-
-        if (drink.milk > milk) {
-            System.out.println("Sorry, not enough milk!");
-            return false;
-        }
-
-        if (drink.beans > beans) {
-            System.out.println("Sorry, not enough beans!");
-            return false;
-        }
-
-        if (cups == 0) {
-            System.out.println("Sorry, not enough cup!");
-            return false;
-        }
-
-        return true;
-    }
-
     private void take() {
         System.out.printf("\nI gave you $%d", amount);
         amount = 0;
@@ -300,6 +236,31 @@ class CoffeeMaker {
     private void remaining() {
         System.out.println();
         System.out.println(this);
+    }
+
+    public String toString() {
+        return "The coffee machine has:\n" + String.format("%d of water\n", water) +
+                String.format("%d of milk\n", milk) +
+                String.format("%d of coffee beans\n", beans) +
+                String.format("%d of disposable cups\n", cups) +
+                String.format("$%d of money", amount);
+    }
+
+    private HashMap<String, State> initActionMenu() {
+        HashMap<String, State> menuItems = new HashMap<>();
+        menuItems.put("buy", State.BUYING_COFFEE);
+        menuItems.put("fill", State.FILLING_WATER);
+        menuItems.put("take", State.DISBURSING);
+        menuItems.put("remaining", State.LOGGING);
+        return  menuItems;
+    }
+
+    private HashMap<String, Drink> initCoffeeMenu() {
+        HashMap<String, Drink> menuItems = new HashMap<>();
+        menuItems.put("1", new Drink(250, 0, 16, 4));
+        menuItems.put("2", new Drink(350, 75, 20, 7));
+        menuItems.put("3", new Drink(200, 100, 12, 6));
+        return  menuItems;
     }
 
     private static class Drink {
@@ -315,6 +276,12 @@ class CoffeeMaker {
             this.price = price;
 
         }
+    }
+
+    private enum State {
+        CHOOSING_ACTION, BUYING_COFFEE,
+        FILLING_WATER,  FILLING_MILK, FILLING_BEANS, FILLING_CUPS,
+        DISBURSING, LOGGING
     }
 }
 
